@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from google import genai
 import argparse
 from google.genai import types
+from prompts import system_prompt
 
 def main():
     load_dotenv()
@@ -21,7 +22,12 @@ def main():
         types.Content(role="user", parts=[types.Part(text=args.user_prompt)])
     ]
 
-    response = client.models.generate_content(contents=messages, model='gemini-3.5-flash')
+    response = client.models.generate_content(
+        contents=messages,
+        model='gemini-3.5-flash',
+        config=types.GenerateContentConfig(system_instruction=system_prompt,
+                                        temperature=0)
+    )
     if not response.usage_metadata:
         raise RuntimeError("No LLM response received")
     if args.verbose:
