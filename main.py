@@ -4,6 +4,7 @@ from google import genai
 import argparse
 from google.genai import types
 from prompts import system_prompt
+from functions.get_files_info import schema_get_files_info
 
 def main():
     load_dotenv()
@@ -22,18 +23,29 @@ def main():
         types.Content(role="user", parts=[types.Part(text=args.user_prompt)])
     ]
 
+    available_functions = types.Tool(
+        function_declarations=[schema_get_files_info]
+    )
+
+    config=types.GenerateContentConfig(tools=[available_functions],
+                                       system_instruction=system_prompt,
+                                       temperature=0)
+
     response = client.models.generate_content(
         contents=messages,
         model='gemini-3.5-flash',
-        config=types.GenerateContentConfig(system_instruction=system_prompt,
-                                        temperature=0)
+        config=config
     )
+
     if not response.usage_metadata:
         raise RuntimeError("No LLM response received")
     if args.verbose:
         print(f"User prompt: {response.prompt_feedback}")
         print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
         print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+    if response.function_calls:
+        for call in response.function_calls:
+            print(f"Calling function: {call.name}({call.args})")
     print(response.text)
 
 if __name__ == "__main__":
