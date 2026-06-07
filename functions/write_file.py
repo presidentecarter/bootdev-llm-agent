@@ -1,5 +1,24 @@
 import os
-from functions.func_utils import is_valid_filepath
+from google.genai import types
+
+schema_write_file = types.FunctionDeclaration(
+    name="write_file",
+    description="Write to a file_path from a specific working directory, given certain content",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        required=["file_path", "content"],
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="relative file path from working directory to write a file to",
+            ),
+            "content": types.Schema(
+                type=types.Type.STRING,
+                description="Content to write into file",
+            ),
+        },
+    ),
+)
 
 def write_file(working_directory: str, file_path: str, content: str) -> str:
     try: 
