@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from google import genai
 import argparse
 from google.genai import types
+from call_function import call_function
 from prompts import system_prompt
 
 from functions.get_files_info import schema_get_files_info
@@ -47,9 +48,23 @@ def main():
         print(f"User prompt: {response.prompt_feedback}")
         print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
         print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+
+    function_results = []
     if response.function_calls:
         for call in response.function_calls:
-            print(f"Calling function: {call.name}({call.args})")
+            function_call_result = call_function(call)
+
+            if not function_call_result.parts:
+                raise Exception(f"function call {call.name} returned empty .parts")
+            if not function_call_result.parts[0].function_response:
+                raise Exception(f"function call {call.name} contained response of None")
+            if not function_call_result.parts[0].function_response.response:
+                raise Exception(f"function call {call.name} had no response")
+
+            function_results.append(function_call_result.parts[0])
+
+            if args.verbose:
+                print(f"-> {function_call_result.parts[0].function_response.response}")
     print(response.text)
 
 if __name__ == "__main__":
